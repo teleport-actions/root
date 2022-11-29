@@ -1,0 +1,10 @@
+name: 'Teleport Setup'
+description: 'Installs `tsh`, `tbot` and `tctl`.'
+author: 'Gravitational Inc.'
+inputs:
+  version:
+    required: true
+    description: 'Specify the Teleport version without the preceding "v"'
+runs:
+  using: 'node16'
+  main: '../dist/setup/index.js'
