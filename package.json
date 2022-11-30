@@ -6,7 +6,7 @@
     "license": "Apache-2.0",
     "workspaces": [
       "actions/*",
-      "lib/"
+      "common/lib/"
     ],
     "scripts": {
       "prettier-check": "yarn prettier --check .",
