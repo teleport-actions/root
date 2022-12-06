@@ -1,0 +1,4 @@
+name: 'Teleport Auth'
+description: 'Uses Machine ID to fetch credentials for use with `tctl` and `tsh`. Automatically configures `tctl` and `tsh` to use these credentials in following steps.'
+extend:
+  - from: '@/common/action.yml'

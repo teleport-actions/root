@@ -1,0 +1,8 @@
+name: 'Teleport Auth Kubernetes'
+description: 'Uses Machine ID to fetch credentials for use with a Kubernetes cluster. Automatically configure `KUBE_CONFIG` environment variable so invocations of `kubectl` and similar tools work as expected.'
+inputs:
+  kubernetes-cluster:
+    description: 'Specify the name of the Kubernetes cluster in Teleport you wish to connect to.'
+    required: true
+extend:
+  - from: '@/common/action.yml'

@@ -1,0 +1,12 @@
+name: 'Teleport Setup'
+description: 'Installs `tsh`, `tbot` and `tctl`.'
+inputs:
+  version:
+    required: true
+    description: 'Specify the Teleport version without the preceding "v"'
+extend:
+  - from: '@/common/action.yml'
+    include:
+    - field: runs
+    - field: author
+    - field: branding

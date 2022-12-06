@@ -1,0 +1,17 @@
+author: Gravitational, Inc.
+inputs:
+  token:
+    description: 'Specify the Teleport token to use to join.'
+    required: true
+  proxy:
+    description: 'Specify the address of your Teleport Proxy.'
+    required: true
+  certificate-ttl:
+    description: 'Specify the length that the generated credentials should be valid for. Defaults to "1h"'
+    required: false
+branding:
+  icon: terminal
+  color: 'purple'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
