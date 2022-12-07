@@ -24,6 +24,6 @@ jobs:
       - name: Deploy actions
         run: gamma deploy
         env:
-          GITHUB_APP_INSTALLATION_ID: ${{ secrets.APP_ID }}
-          GITHUB_APP_ID: ${{ secrets.INSTALLATION_ID }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.INSTALLATION_ID }}
+          GITHUB_APP_ID: ${{ secrets.APP_ID }}
           GITHUB_APP_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
