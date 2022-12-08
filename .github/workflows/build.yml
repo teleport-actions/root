@@ -4,17 +4,23 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - name: Install yarn dependencies
+        run: yarn
+      - name: Run linters
+        run: yarn lint
+
   build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-node@v3
-
       - uses: gravitational/setup-gamma@v1
-
       - run: yarn # Install your dependencies as normal
-
       - name: Build actions
         run: gamma build

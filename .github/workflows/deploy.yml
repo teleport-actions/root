@@ -9,18 +9,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
-
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Make sure you set this, as Gamma needs the Git history
-
       - uses: actions/setup-node@v3
-
       - uses: gravitational/setup-gamma@v1
-
       - run: yarn # Install your dependencies as normal
-
       - name: Deploy actions
         run: gamma deploy
         env:
