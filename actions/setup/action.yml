@@ -7,6 +7,6 @@ inputs:
 extend:
   - from: '@/common/action.yml'
     include:
-    - field: runs
-    - field: author
-    - field: branding
+      - field: runs
+      - field: author
+      - field: branding
