@@ -1,5 +1,5 @@
 name: 'Teleport Auth (Kubernetes)'
-description: "Authenticates your workflow so it can use tools like `kubectl` against Kubernetes clusters protected by Teleport."
+description: 'Authenticates your workflow so it can use tools like `kubectl` against Kubernetes clusters protected by Teleport.'
 inputs:
   kubernetes-cluster:
     description: 'Specify the name of the Kubernetes cluster in Teleport you wish to connect to.'
