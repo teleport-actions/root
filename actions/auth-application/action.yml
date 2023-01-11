@@ -1,0 +1,8 @@
+name: 'Teleport Auth (Application Access)'
+description: 'Generates credentials so that your workflow can access applications protected by Teleport.'
+inputs:
+  app:
+    description: 'Specify the name of the application in Teleport you wish to generate credentials for.'
+    required: true
+extend:
+  - from: '@/common/action.yml'
