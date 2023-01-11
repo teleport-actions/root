@@ -14,7 +14,7 @@
 
 # `teleport-actions/auth-application`
 
-`auth-application` uses Teleport Machine ID to generate an credentials for
+`auth-application` uses Teleport Machine ID to generate credentials for
 accessing an application protected by Teleport.
 
 The action has the following outputs:
