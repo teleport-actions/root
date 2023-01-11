@@ -45,7 +45,7 @@ steps:
       version: 11.0.3
   - name: Fetch application credentials
     id: auth
-    uses: teleport-actions/auth-k8s@v1
+    uses: teleport-actions/auth-application@v1
     with:
       # Specify the publically accessible address of your Teleport proxy.
       proxy: tele.example.com:443
