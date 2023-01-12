@@ -12,38 +12,40 @@
 
 > Read our Documentation: <https://goteleport.com/docs/getting-started/>
 
-# `teleport-actions/auth-k8s`
+# `teleport-actions/auth-application`
 
-`auth-k8s` uses Teleport Machine ID to generate an authorized Kubernetes client
-configuration for a specified cluster protected by Teleport.
+`auth-application` uses Teleport Machine ID to generate credentials for
+accessing an application protected by Teleport.
 
-The action sets the `KUBECONFIG` environment variable for consecutive steps in
-the job, meaning that tools like `kubectl` will automatically connect to the
-requested Kubernetes cluster without additional configuration.
+The action has the following outputs:
+
+- `certificate-file`: the path to the client certificate to use with requests to
+  the application.
+- `key-file`: the path to the private key for the client certificate to use with
+  request to the application.
 
 Pre-requisites:
 
 - Teleport 11 or above must be used.
 - Teleport binaries must already be installed in the job environment.
-- The Kubernetes cluster you wish to access must already be connected to your
-  Teleport cluster. See
-  <https://goteleport.com/docs/kubernetes-access/getting-started/>
-- You must have created a bot with a role with access to your Kubernetes cluster
-  and created a GitHub join token that allows that bot to join.
+- The Applicatiom you wish to access must already be connected to your Teleport
+  cluster. See
+  <https://goteleport.com/docs/application-access/getting-started/>
+- You must have created a bot with a role with access to your Application and
+  created a GitHub join token that allows that bot to join.
 - A Linux based runner.
 
 Example usage:
 
 ```yaml
 steps:
-  - name: Install Kubectl
-    uses: azure/setup-kubectl@v3
   - name: Install Teleport
     uses: teleport-actions/setup@v1
     with:
       version: 11.0.3
-  - name: Authorize against Teleport
-    uses: teleport-actions/auth-k8s@v1
+  - name: Fetch application credentials
+    id: auth
+    uses: teleport-actions/auth-application@v1
     with:
       # Specify the publically accessible address of your Teleport proxy.
       proxy: tele.example.com:443
@@ -52,8 +54,8 @@ steps:
       # Specify the length of time that the generated credentials should be
       # valid for. This is optional and defaults to "1h"
       certificate-ttl: 1h
-      # Specify the name of the Kubernetes cluster you wish to access.
-      kubernetes-cluster: my-kubernetes-cluster
-  - name: List pods
-    run: kubectl get pods
+      # Specify the name of the application you wish to access.
+      app: grafana-example
+  - name: Make request
+    run: curl --cert {{ steps.auth.outputs.certificate-file }} --key {{ steps.auth.outputs.key-file }} https://grafana-example.tele.example.com/api/users
 ```

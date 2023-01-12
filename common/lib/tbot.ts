@@ -34,6 +34,7 @@ export interface ConfigurationV1Destination {
   };
   roles: Array<string>;
   kubernetes_cluster?: string;
+  app?: string;
 }
 export interface ConfigurationV1 {
   auth_server: string;
