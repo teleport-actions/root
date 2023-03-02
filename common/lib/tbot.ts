@@ -114,8 +114,8 @@ export function baseEnvFromSharedInputs(
   } = {};
 
   env['TELEPORT_ANONYMOUS_TELEMETRY'] = inputs.anonymousTelemetry ? '1' : '0';
-  env['_TBOT_TELEMETRY_HELPER'] = name
-  env['_TBOT_TELEMETRY_HELPER_VERSION'] = version
+  env['_TBOT_TELEMETRY_HELPER'] = name;
+  env['_TBOT_TELEMETRY_HELPER_VERSION'] = version;
 
   return env;
 }

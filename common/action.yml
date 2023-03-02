@@ -10,7 +10,7 @@ inputs:
     description: 'Specify the length that the generated credentials should be valid for. Defaults to "1h"'
     required: false
   anonymous-telemetry:
-    description: "Enables anonymous telemetry. See https://goteleport.com/docs/machine-id/reference/telemetry/ for more information."
+    description: 'Enables anonymous telemetry. See https://goteleport.com/docs/machine-id/reference/telemetry/ for more information.'
     required: false
 branding:
   icon: terminal

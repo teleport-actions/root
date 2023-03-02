@@ -56,7 +56,7 @@ jobs:
           # valid for. This is optional and defaults to "1h"
           certificate-ttl: 1h
           # Enable submission of anonymous usage telemetry to Teleport.
-          # See https://goteleport.com/docs/machine-id/reference/telemetry/ for 
+          # See https://goteleport.com/docs/machine-id/reference/telemetry/ for
           # more information.
           anonymous-telemetry: 1
       - name: List nodes (tsh)
