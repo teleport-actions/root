@@ -64,7 +64,7 @@ jobs:
           # Specify the name of the application you wish to access.
           app: grafana-example
           # Enable submission of anonymous usage telemetry to Teleport.
-          # See https://goteleport.com/docs/machine-id/reference/telemetry/ for 
+          # See https://goteleport.com/docs/machine-id/reference/telemetry/ for
           # more information.
           anonymous-telemetry: 1
       - name: Make request
