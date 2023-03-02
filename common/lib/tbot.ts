@@ -12,16 +12,27 @@ export interface SharedInputs {
   token: string;
   debug: boolean;
   certificateTTL: string;
+  anonymousTelemetry: boolean;
+}
+
+function stringToBool(str: string): boolean {
+  if (str === '') {
+    return false;
+  }
+  return /^\s*(true|1)\s*$/i.test(str);
 }
 
 export function getSharedInputs(): SharedInputs {
   const proxy = core.getInput('proxy', { required: true });
   const token = core.getInput('token', { required: true });
   const certificateTTL = core.getInput('certificate-ttl');
+  const anonymousTelemetry = stringToBool(core.getInput('anonymous-telemetry'));
+
   return {
     proxy,
     token,
     certificateTTL,
+    anonymousTelemetry,
     debug: core.isDebug(),
   };
 }
@@ -91,7 +102,30 @@ export async function writeConfiguration(
   return configPath;
 }
 
-export async function execute(configPath: string) {
+export function baseEnvFromSharedInputs(
+  inputs: SharedInputs,
+  name: string,
+  version: string
+): {
+  [key: string]: string;
+} {
+  const env: {
+    [key: string]: string;
+  } = {};
+
+  env['TELEPORT_ANONYMOUS_TELEMETRY'] = inputs.anonymousTelemetry ? '1' : '0';
+  env['_TBOT_TELEMETRY_HELPER'] = name
+  env['_TBOT_TELEMETRY_HELPER_VERSION'] = version
+
+  return env;
+}
+
+export async function execute(
+  configPath: string,
+  env: { [key: string]: string }
+) {
   core.info('Invoking tbot with configuration at ' + configPath);
-  await exec.exec('tbot', ['start', '-c', configPath]);
+  await exec.exec('tbot', ['start', '-c', configPath], {
+    env,
+  });
 }
