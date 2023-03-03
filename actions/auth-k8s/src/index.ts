@@ -5,6 +5,8 @@ import * as core from '@actions/core';
 import * as tbot from '@root/lib/tbot';
 import * as io from '@root/lib/io';
 
+const { version } = require('../package.json');
+
 interface Inputs {
   kubernetesCluster: string;
 }
@@ -33,7 +35,12 @@ async function run() {
   });
 
   const configPath = await tbot.writeConfiguration(config);
-  await tbot.execute(configPath);
+  const env = tbot.baseEnvFromSharedInputs(
+    sharedInputs,
+    'gha:teleport-actions/auth-k8s',
+    version
+  );
+  await tbot.execute(configPath, env);
 
   core.exportVariable(
     'KUBECONFIG',
