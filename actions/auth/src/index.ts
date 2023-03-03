@@ -21,7 +21,7 @@ async function run() {
   await tbot.execute(configPath);
 
   const identityFilePath = path.join(destinationPath, 'identity');
-  const sshConfigFilePath = path.join(destinationPath, 'ssh_config')
+  const sshConfigFilePath = path.join(destinationPath, 'ssh_config');
   core.setOutput('identity-file', identityFilePath);
   core.setOutput('ssh-config', sshConfigFilePath);
   core.exportVariable('TELEPORT_PROXY', sharedInputs.proxy);
