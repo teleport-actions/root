@@ -113,6 +113,13 @@ export function baseEnvFromSharedInputs(
     [key: string]: string;
   } = {};
 
+  for (const key in process.env) {
+    const val = process.env[key];
+    if (val) {
+      env[key] = val;
+    }
+  }
+
   env['TELEPORT_ANONYMOUS_TELEMETRY'] = inputs.anonymousTelemetry ? '1' : '0';
   env['_TBOT_TELEMETRY_HELPER'] = name;
   env['_TBOT_TELEMETRY_HELPER_VERSION'] = version;
