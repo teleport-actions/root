@@ -42,6 +42,7 @@ export function getSharedInputs(): SharedInputs {
 export interface ConfigurationV1Destination {
   directory: {
     path: string;
+    symlinks: 'try-secure' | 'secure' | 'insecure';
   };
   roles: Array<string>;
   kubernetes_cluster?: string;
