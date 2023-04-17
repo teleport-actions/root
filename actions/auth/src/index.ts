@@ -15,7 +15,7 @@ async function run() {
   config.destinations.push({
     directory: {
       path: destinationPath,
-      symlinks: "try-secure",
+      symlinks: 'try-secure',
     },
     roles: [], // Use all assigned to bot,
   });
