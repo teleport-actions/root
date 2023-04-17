@@ -29,6 +29,7 @@ async function run() {
   config.destinations.push({
     directory: {
       path: destinationPath,
+      symlinks: 'try-secure',
     },
     roles: [], // Use all assigned to bot,
     kubernetes_cluster: inputs.kubernetesCluster,
