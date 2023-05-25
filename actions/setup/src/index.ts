@@ -78,7 +78,6 @@ async function run(): Promise<void> {
   const toolName = inputs.enterprise ? 'teleport-ent' : 'teleport';
   core.info(`Installing ${toolName} ${version}`);
 
-
   const toolPath = tc.find(toolName, version);
   if (toolPath !== '') {
     core.info('Teleport binaries found in cache.');
