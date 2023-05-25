@@ -64,7 +64,7 @@ function getInputs(): Inputs {
     );
   }
 
-  const enterprise = core.getBooleanInput('enterprise')
+  const enterprise = core.getBooleanInput('enterprise');
 
   return {
     version,
