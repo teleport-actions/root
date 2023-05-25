@@ -44,6 +44,7 @@ function versionString(
 
 interface Inputs {
   version: string;
+  enterprise: boolean;
 }
 
 function getInputs(): Inputs {
@@ -63,17 +64,20 @@ function getInputs(): Inputs {
     );
   }
 
+  const enterprise = core.getBooleanInput('enterprise')
+
   return {
     version,
+    enterprise,
   };
 }
-
-const toolName = 'teleport';
 
 async function run(): Promise<void> {
   const inputs = getInputs();
   const version = versionString(os.platform(), os.arch(), inputs.version);
-  core.info(`Installing Teleport ${version}`);
+  const toolName = inputs.enterprise ? 'teleport-ent' : 'teleport';
+  core.info(`Installing ${toolName} ${version}`);
+
 
   const toolPath = tc.find(toolName, version);
   if (toolPath !== '') {
@@ -85,7 +89,7 @@ async function run(): Promise<void> {
   core.info('Could not find Teleport binaries in cache. Fetching...');
   core.debug('Downloading tar');
   const downloadPath = await tc.downloadTool(
-    `https://cdn.teleport.dev/teleport-${version}-bin.tar.gz`
+    `https://cdn.teleport.dev/${toolName}-${version}-bin.tar.gz`
   );
 
   core.debug('Extracting tar');
