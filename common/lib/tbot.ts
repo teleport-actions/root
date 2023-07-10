@@ -37,18 +37,42 @@ export function getSharedInputs(): SharedInputs {
   };
 }
 
-// See https://github.com/gravitational/teleport/blob/master/lib/tbot/config/config.go#L206
-// For configuration references
-export interface ConfigurationV1Destination {
-  directory: {
-    path: string;
-    symlinks: 'try-secure' | 'secure' | 'insecure';
-  };
-  roles: Array<string>;
-  kubernetes_cluster?: string;
-  app?: string;
+export interface DirectoryDestination {
+  type: 'directory';
+  path: string;
+  symlinks: 'try-secure' | 'secure' | 'insecure';
 }
-export interface ConfigurationV1 {
+
+export interface MemoryDestination {
+  type: 'memory';
+}
+
+export type Destination = DirectoryDestination | MemoryDestination;
+
+export interface IdentityOutput {
+  type: 'identity';
+  destination: Destination;
+  roles: Array<string>;
+}
+
+export interface KubernetesOutput {
+  type: 'kubernetes';
+  destination: Destination;
+  roles: Array<string>;
+  kubernetes_cluster: string;
+}
+
+export interface ApplicationOutput {
+  type: 'application';
+  destination: Destination;
+  roles: Array<string>;
+  app_name: string;
+}
+
+export type Output = IdentityOutput | KubernetesOutput | ApplicationOutput;
+
+export interface Configuration {
+  version: 'v2';
   auth_server: string;
   oneshot: boolean;
   debug: boolean;
@@ -57,17 +81,18 @@ export interface ConfigurationV1 {
     join_method: string;
     token: string;
   };
-  storage: {
-    memory?: boolean;
-    directory?: string;
-  };
-  destinations: Array<ConfigurationV1Destination>;
+  storage: Destination;
+  outputs: Array<Output>;
 }
 
 export function baseConfigurationFromSharedInputs(
   inputs: SharedInputs
-): ConfigurationV1 {
-  const cfg: ConfigurationV1 = {
+): Configuration {
+  const storage: MemoryDestination = {
+    type: 'memory',
+  };
+  const cfg: Configuration = {
+    version: 'v2',
     auth_server: inputs.proxy,
     oneshot: true,
     debug: inputs.debug,
@@ -75,12 +100,8 @@ export function baseConfigurationFromSharedInputs(
       join_method: 'github',
       token: inputs.token,
     },
-    storage: {
-      // We use memory storage here so we avoid ever writing the bots more
-      // powerful credentials to disk.
-      memory: true,
-    },
-    destinations: [],
+    storage: storage,
+    outputs: [],
   };
 
   if (inputs.certificateTTL) {
@@ -91,7 +112,7 @@ export function baseConfigurationFromSharedInputs(
 }
 
 export async function writeConfiguration(
-  config: ConfigurationV1
+  config: Configuration
 ): Promise<string> {
   const tempDir = await io.makeTempDirectory();
   const configPath = path.join(tempDir, 'bot-config.yaml');

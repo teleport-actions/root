@@ -4,6 +4,7 @@ import * as core from '@actions/core';
 
 import * as tbot from '@root/lib/tbot';
 import * as io from '@root/lib/io';
+import { DirectoryDestination, KubernetesOutput } from '@root/lib/tbot';
 
 const { version } = require('../package.json');
 
@@ -26,14 +27,17 @@ async function run() {
 
   // Inject a destination for the Kubernetes cluster credentials
   const destinationPath = await io.makeTempDirectory();
-  config.destinations.push({
-    directory: {
-      path: destinationPath,
+  const output: KubernetesOutput = {
+    type: 'kubernetes',
+    destination: <DirectoryDestination>{
+      type: 'directory',
       symlinks: 'try-secure',
+      path: destinationPath,
     },
     roles: [], // Use all assigned to bot,
     kubernetes_cluster: inputs.kubernetesCluster,
-  });
+  };
+  config.outputs.push(output);
 
   const configPath = await tbot.writeConfiguration(config);
   const env = tbot.baseEnvFromSharedInputs(
