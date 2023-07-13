@@ -9,6 +9,8 @@ import { DirectoryDestination, IdentityOutput } from '@root/lib/tbot';
 const { version } = require('../package.json');
 
 async function run() {
+  await tbot.ensureMinimumVersion('14.0.0');
+
   const sharedInputs = tbot.getSharedInputs();
   const config = tbot.baseConfigurationFromSharedInputs(sharedInputs);
 

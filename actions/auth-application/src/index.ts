@@ -21,6 +21,8 @@ function getInputs(): Inputs {
 }
 
 async function run() {
+  await tbot.ensureMinimumVersion('14.0.0');
+
   const inputs = getInputs();
   const sharedInputs = tbot.getSharedInputs();
   const config = tbot.baseConfigurationFromSharedInputs(sharedInputs);
