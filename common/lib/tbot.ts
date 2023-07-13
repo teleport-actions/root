@@ -158,3 +158,21 @@ export async function execute(
     env,
   });
 }
+
+// versionRegex extracts a version from a string like
+// "Teleport v13.1.0 git:v13.1.0-0-gd83ec74 go1.20.4"
+// Or on Enterprise:
+// "Teleport Enterprise v13.1.0 git:v13.1.0-0-gd83ec74 go1.20.4"
+const versionRegex = new RegExp('Teleport (?:Enterprise )?v(?<version>[^ ]*)');
+
+export async function getTbotVersion(): Promise<string> {
+  const out = await exec.getExecOutput('tbot', ['version']);
+  const matchArray = out.stdout.match(versionRegex);
+  const version = matchArray?.groups?.version;
+  if (!version) {
+    throw new Error('malformed version returned by tbot');
+  }
+  core.info('detected tbot version: ' + version);
+
+  return version;
+}
