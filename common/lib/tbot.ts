@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as yaml from 'yaml';
+import * as semver from 'semver';
 
 import * as io from './io';
 
@@ -165,7 +166,7 @@ export async function execute(
 // "Teleport Enterprise v13.1.0 git:v13.1.0-0-gd83ec74 go1.20.4"
 const versionRegex = new RegExp('Teleport (?:Enterprise )?v(?<version>[^ ]*)');
 
-export async function getTbotVersion(): Promise<string> {
+async function getTbotVersion(): Promise<string> {
   const out = await exec.getExecOutput('tbot', ['version']);
   const matchArray = out.stdout.match(versionRegex);
   const version = matchArray?.groups?.version;
@@ -175,4 +176,13 @@ export async function getTbotVersion(): Promise<string> {
   core.info('detected tbot version: ' + version);
 
   return version;
+}
+
+export async function ensureMinimumVersion(minimumVersion: string) {
+  const version = await getTbotVersion();
+  if (!semver.gte(version, minimumVersion)) {
+    throw new Error(
+      `tbot version ${version} detected, minimum version required by this github action is ${minimumVersion}`
+    );
+  }
 }
