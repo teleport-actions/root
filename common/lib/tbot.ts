@@ -164,9 +164,10 @@ export async function execute(
 // "Teleport v13.1.0 git:v13.1.0-0-gd83ec74 go1.20.4"
 // Or on Enterprise:
 // "Teleport Enterprise v13.1.0 git:v13.1.0-0-gd83ec74 go1.20.4"
+// -> 13.1.0
 const versionRegex = new RegExp('Teleport (?:Enterprise )?v(?<version>[^ ]*)');
 
-async function getTbotVersion(): Promise<string> {
+async function getVersion(): Promise<string> {
   const out = await exec.getExecOutput('tbot', ['version']);
   const matchArray = out.stdout.match(versionRegex);
   const version = matchArray?.groups?.version;
@@ -179,7 +180,7 @@ async function getTbotVersion(): Promise<string> {
 }
 
 export async function ensureMinimumVersion(minimumVersion: string) {
-  const version = await getTbotVersion();
+  const version = await getVersion();
   if (!semver.gte(version, minimumVersion)) {
     throw new Error(
       `tbot version ${version} detected, minimum version required by this github action is ${minimumVersion}`
