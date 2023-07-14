@@ -23,7 +23,7 @@ requested Kubernetes cluster without additional configuration.
 
 Pre-requisites:
 
-- **Teleport 14 or above must be used.** Use 
+- **Teleport 14 or above must be used.** Use
   [`teleport-actions/auth-k8s@v1`](https://github.com/teleport-actions/auth-k8s/tree/v1)
   for compatability with older versions of Teleport.
 - Teleport binaries must already be installed in the job environment.
