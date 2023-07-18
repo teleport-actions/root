@@ -10,7 +10,6 @@ import * as io from './io';
 export interface SharedInputs {
   proxy: string;
   token: string;
-  debug: boolean;
   certificateTTL: string;
   anonymousTelemetry: boolean;
 }
@@ -33,7 +32,6 @@ export function getSharedInputs(): SharedInputs {
     token,
     certificateTTL,
     anonymousTelemetry,
-    debug: core.isDebug(),
   };
 }
 
@@ -51,7 +49,6 @@ export interface ConfigurationV1Destination {
 export interface ConfigurationV1 {
   auth_server: string;
   oneshot: boolean;
-  debug: boolean;
   certificate_ttl?: string;
   onboarding: {
     join_method: string;
@@ -70,7 +67,6 @@ export function baseConfigurationFromSharedInputs(
   const cfg: ConfigurationV1 = {
     auth_server: inputs.proxy,
     oneshot: true,
-    debug: inputs.debug,
     onboarding: {
       join_method: 'github',
       token: inputs.token,
@@ -133,7 +129,11 @@ export async function execute(
   env: { [key: string]: string }
 ) {
   core.info('Invoking tbot with configuration at ' + configPath);
-  await exec.exec('tbot', ['start', '-c', configPath], {
+  const args = ['start', '-c', configPath];
+  if (core.isDebug()) {
+    args.push('--debug');
+  }
+  await exec.exec('tbot', args, {
     env,
   });
 }
