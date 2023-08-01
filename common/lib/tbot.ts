@@ -12,6 +12,7 @@ export interface SharedInputs {
   token: string;
   certificateTTL: string;
   anonymousTelemetry: boolean;
+  caPins: string[];
 }
 
 function stringToBool(str: string): boolean {
@@ -26,12 +27,14 @@ export function getSharedInputs(): SharedInputs {
   const token = core.getInput('token', { required: true });
   const certificateTTL = core.getInput('certificate-ttl');
   const anonymousTelemetry = stringToBool(core.getInput('anonymous-telemetry'));
+  const caPins = core.getMultilineInput('ca-pins');
 
   return {
     proxy,
     token,
     certificateTTL,
     anonymousTelemetry,
+    caPins,
   };
 }
 
@@ -53,6 +56,7 @@ export interface ConfigurationV1 {
   onboarding: {
     join_method: string;
     token: string;
+    ca_pins: string[];
   };
   storage: {
     memory?: boolean;
@@ -70,6 +74,7 @@ export function baseConfigurationFromSharedInputs(
     onboarding: {
       join_method: 'github',
       token: inputs.token,
+      ca_pins: inputs.caPins,
     },
     storage: {
       // We use memory storage here so we avoid ever writing the bots more
