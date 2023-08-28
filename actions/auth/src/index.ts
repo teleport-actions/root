@@ -4,21 +4,27 @@ import * as core from '@actions/core';
 
 import * as tbot from '@root/lib/tbot';
 import * as io from '@root/lib/io';
+import { DirectoryDestination, IdentityOutput } from '@root/lib/tbot';
 
 const { version } = require('../package.json');
 
 async function run() {
+  await tbot.ensureMinimumVersion('14.0.0');
+
   const sharedInputs = tbot.getSharedInputs();
   const config = tbot.baseConfigurationFromSharedInputs(sharedInputs);
 
   const destinationPath = await io.makeTempDirectory();
-  config.destinations.push({
-    directory: {
-      path: destinationPath,
+  const output: IdentityOutput = {
+    type: 'identity',
+    destination: <DirectoryDestination>{
+      type: 'directory',
       symlinks: 'try-secure',
+      path: destinationPath,
     },
     roles: [], // Use all assigned to bot,
-  });
+  };
+  config.outputs.push(output);
 
   const configPath = await tbot.writeConfiguration(config);
   const env = tbot.baseEnvFromSharedInputs(

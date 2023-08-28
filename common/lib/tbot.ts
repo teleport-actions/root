@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as yaml from 'yaml';
+import * as semver from 'semver';
 
 import * as io from './io';
 
@@ -38,18 +39,42 @@ export function getSharedInputs(): SharedInputs {
   };
 }
 
-// See https://github.com/gravitational/teleport/blob/master/lib/tbot/config/config.go#L206
-// For configuration references
-export interface ConfigurationV1Destination {
-  directory: {
-    path: string;
-    symlinks: 'try-secure' | 'secure' | 'insecure';
-  };
-  roles: Array<string>;
-  kubernetes_cluster?: string;
-  app?: string;
+export interface DirectoryDestination {
+  type: 'directory';
+  path: string;
+  symlinks: 'try-secure' | 'secure' | 'insecure';
 }
-export interface ConfigurationV1 {
+
+export interface MemoryDestination {
+  type: 'memory';
+}
+
+export type Destination = DirectoryDestination | MemoryDestination;
+
+export interface IdentityOutput {
+  type: 'identity';
+  destination: Destination;
+  roles: Array<string>;
+}
+
+export interface KubernetesOutput {
+  type: 'kubernetes';
+  destination: Destination;
+  roles: Array<string>;
+  kubernetes_cluster: string;
+}
+
+export interface ApplicationOutput {
+  type: 'application';
+  destination: Destination;
+  roles: Array<string>;
+  app_name: string;
+}
+
+export type Output = IdentityOutput | KubernetesOutput | ApplicationOutput;
+
+export interface Configuration {
+  version: 'v2';
   auth_server: string;
   oneshot: boolean;
   certificate_ttl?: string;
@@ -58,17 +83,18 @@ export interface ConfigurationV1 {
     token: string;
     ca_pins: string[];
   };
-  storage: {
-    memory?: boolean;
-    directory?: string;
-  };
-  destinations: Array<ConfigurationV1Destination>;
+  storage: Destination;
+  outputs: Array<Output>;
 }
 
 export function baseConfigurationFromSharedInputs(
   inputs: SharedInputs
-): ConfigurationV1 {
-  const cfg: ConfigurationV1 = {
+): Configuration {
+  const storage: MemoryDestination = {
+    type: 'memory',
+  };
+  const cfg: Configuration = {
+    version: 'v2',
     auth_server: inputs.proxy,
     oneshot: true,
     onboarding: {
@@ -76,12 +102,8 @@ export function baseConfigurationFromSharedInputs(
       token: inputs.token,
       ca_pins: inputs.caPins,
     },
-    storage: {
-      // We use memory storage here so we avoid ever writing the bots more
-      // powerful credentials to disk.
-      memory: true,
-    },
-    destinations: [],
+    storage: storage,
+    outputs: [],
   };
 
   if (inputs.certificateTTL) {
@@ -92,7 +114,7 @@ export function baseConfigurationFromSharedInputs(
 }
 
 export async function writeConfiguration(
-  config: ConfigurationV1
+  config: Configuration
 ): Promise<string> {
   const tempDir = await io.makeTempDirectory();
   const configPath = path.join(tempDir, 'bot-config.yaml');
@@ -141,4 +163,32 @@ export async function execute(
   await exec.exec('tbot', args, {
     env,
   });
+}
+
+// versionRegex extracts a version from a string like
+// "Teleport v13.1.0 git:v13.1.0-0-gd83ec74 go1.20.4"
+// Or on Enterprise:
+// "Teleport Enterprise v13.1.0 git:v13.1.0-0-gd83ec74 go1.20.4"
+// -> 13.1.0
+const versionRegex = new RegExp('Teleport (?:Enterprise )?v(?<version>[^ ]*)');
+
+async function getVersion(): Promise<string> {
+  const out = await exec.getExecOutput('tbot', ['version']);
+  const matchArray = out.stdout.match(versionRegex);
+  const version = matchArray?.groups?.version;
+  if (!version) {
+    throw new Error('malformed version returned by tbot');
+  }
+  core.info('detected tbot version: ' + version);
+
+  return version;
+}
+
+export async function ensureMinimumVersion(minimumVersion: string) {
+  const version = await getVersion();
+  if (!semver.gte(version, minimumVersion)) {
+    throw new Error(
+      `tbot version ${version} detected, minimum version required by this github action is ${minimumVersion}`
+    );
+  }
 }
