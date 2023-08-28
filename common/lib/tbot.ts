@@ -11,9 +11,9 @@ import * as io from './io';
 export interface SharedInputs {
   proxy: string;
   token: string;
-  debug: boolean;
   certificateTTL: string;
   anonymousTelemetry: boolean;
+  caPins: string[];
 }
 
 function stringToBool(str: string): boolean {
@@ -28,13 +28,14 @@ export function getSharedInputs(): SharedInputs {
   const token = core.getInput('token', { required: true });
   const certificateTTL = core.getInput('certificate-ttl');
   const anonymousTelemetry = stringToBool(core.getInput('anonymous-telemetry'));
+  const caPins = core.getMultilineInput('ca-pins');
 
   return {
     proxy,
     token,
     certificateTTL,
     anonymousTelemetry,
-    debug: core.isDebug(),
+    caPins,
   };
 }
 
@@ -76,11 +77,11 @@ export interface Configuration {
   version: 'v2';
   auth_server: string;
   oneshot: boolean;
-  debug: boolean;
   certificate_ttl?: string;
   onboarding: {
     join_method: string;
     token: string;
+    ca_pins: string[];
   };
   storage: Destination;
   outputs: Array<Output>;
@@ -96,10 +97,10 @@ export function baseConfigurationFromSharedInputs(
     version: 'v2',
     auth_server: inputs.proxy,
     oneshot: true,
-    debug: inputs.debug,
     onboarding: {
       join_method: 'github',
       token: inputs.token,
+      ca_pins: inputs.caPins,
     },
     storage: storage,
     outputs: [],
@@ -155,7 +156,11 @@ export async function execute(
   env: { [key: string]: string }
 ) {
   core.info('Invoking tbot with configuration at ' + configPath);
-  await exec.exec('tbot', ['start', '-c', configPath], {
+  const args = ['start', '-c', configPath];
+  if (core.isDebug()) {
+    args.push('--debug');
+  }
+  await exec.exec('tbot', args, {
     env,
   });
 }
