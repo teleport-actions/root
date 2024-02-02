@@ -1,6 +1,6 @@
 {
   "name": "setup",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "license": "Apache-2.0",
   "repository": "https://github.com/teleport-actions/setup.git",
   "scripts": {
@@ -12,6 +12,6 @@
   },
   "private": true,
   "devDependencies": {
-    "@types/node": "^18.8.2"
+    "@types/node": "^20.11.16"
   }
 }
