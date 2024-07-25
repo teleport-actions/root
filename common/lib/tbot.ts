@@ -148,6 +148,13 @@ export function baseEnvFromSharedInputs(
   env['_TBOT_TELEMETRY_HELPER'] = name;
   env['_TBOT_TELEMETRY_HELPER_VERSION'] = version;
 
+  // Some environment variables are set by our actions and can then end up
+  // being used by a second call to our actions. This causes an error as both
+  // variables for proxy and auth addr can be set and tbot rejects this. Since
+  // we're explicitly configuring tbot, we can remove these variables.
+  delete env['TELEPORT_PROXY'];
+  delete env['TELEPORT_AUTH_SERVER'];
+
   return env;
 }
 
