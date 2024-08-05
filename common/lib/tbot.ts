@@ -14,6 +14,7 @@ export interface SharedInputs {
   certificateTTL: string;
   anonymousTelemetry: boolean;
   caPins: string[];
+  export_auth_server: boolean;
 }
 
 function stringToBool(str: string): boolean {
@@ -29,6 +30,7 @@ export function getSharedInputs(): SharedInputs {
   const certificateTTL = core.getInput('certificate-ttl');
   const anonymousTelemetry = stringToBool(core.getInput('anonymous-telemetry'));
   const caPins = core.getMultilineInput('ca-pins');
+  const export_auth_server = core.getBooleanInput('export_auth_server');
 
   return {
     proxy,
@@ -36,6 +38,7 @@ export function getSharedInputs(): SharedInputs {
     certificateTTL,
     anonymousTelemetry,
     caPins,
+    export_auth_server,
   };
 }
 

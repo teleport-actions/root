@@ -36,10 +36,14 @@ async function run() {
 
   const identityFilePath = path.join(destinationPath, 'identity');
   const sshConfigFilePath = path.join(destinationPath, 'ssh_config');
+  const export_auth_server = sharedInputs.export_auth_server;
   core.setOutput('identity-file', identityFilePath);
   core.setOutput('ssh-config', sshConfigFilePath);
   core.exportVariable('TELEPORT_PROXY', sharedInputs.proxy);
-  core.exportVariable('TELEPORT_AUTH_SERVER', sharedInputs.proxy);
+  // By default, we export the env var to not do any breaking change
+  if (export_auth_server == null && export_auth_server) {
+    core.exportVariable('TELEPORT_AUTH_SERVER', sharedInputs.proxy);
+  }
   core.exportVariable('TELEPORT_IDENTITY_FILE', identityFilePath);
 }
 run().catch(core.setFailed);
