@@ -14,6 +14,7 @@ export interface SharedInputs {
   certificateTTL: string;
   anonymousTelemetry: boolean;
   caPins: string[];
+  disableEnvVars: boolean;
 }
 
 function stringToBool(str: string): boolean {
@@ -29,6 +30,7 @@ export function getSharedInputs(): SharedInputs {
   const certificateTTL = core.getInput('certificate-ttl');
   const anonymousTelemetry = stringToBool(core.getInput('anonymous-telemetry'));
   const caPins = core.getMultilineInput('ca-pins');
+  const disableEnvVars = stringToBool(core.getInput('disable-env-vars'));
 
   return {
     proxy,
@@ -36,6 +38,7 @@ export function getSharedInputs(): SharedInputs {
     certificateTTL,
     anonymousTelemetry,
     caPins,
+    disableEnvVars,
   };
 }
 

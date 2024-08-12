@@ -49,9 +49,13 @@ async function run() {
   );
   await tbot.execute(configPath, env);
 
-  core.exportVariable(
-    'KUBECONFIG',
-    path.join(destinationPath, '/kubeconfig.yaml')
-  );
+  const identityPath = path.join(destinationPath, 'identity');
+  const kubeConfigPath = path.join(destinationPath, 'kubeconfig.yaml');
+  core.setOutput('identity-file', identityPath);
+  core.setOutput('kubeconfig', kubeConfigPath);
+
+  if (!sharedInputs.disableEnvVars) {
+    core.exportVariable('KUBECONFIG', kubeConfigPath);
+  }
 }
 run().catch(core.setFailed);
