@@ -81,7 +81,7 @@ By default, this action will set the following environment variables:
 - `TELEPORT_PROXY`: the address of the Teleport Proxy.
 - `TELEPORT_IDENTITY_FILE`: the path to the identity file.
 
-This will automatically configure tools like `tsh` and `tctl` to use the 
+This will automatically configure tools like `tsh` and `tctl` to use the
 generated credentials. However, this can cause issues if you intend to invoke
 `tbot` multiple times.
 
