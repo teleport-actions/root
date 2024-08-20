@@ -9,6 +9,7 @@
     "common/lib/"
   ],
   "scripts": {
+    "prettier-write": "yarn prettier --write .",
     "prettier-check": "yarn prettier --check .",
     "eslint": "eslint --ext .ts .",
     "lint": "yarn eslint && yarn prettier-check"
