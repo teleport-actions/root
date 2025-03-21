@@ -49,6 +49,7 @@ async function run() {
   );
   await tbot.execute(configPath, env);
 
+  core.setOutput('destination-dir', destinationPath);
   core.setOutput('identity-file', path.join(destinationPath, 'identity'));
   core.setOutput('certificate-file', path.join(destinationPath, 'tlscert'));
   core.setOutput('key-file', path.join(destinationPath, 'key'));
