@@ -51,6 +51,7 @@ async function run() {
 
   const identityPath = path.join(destinationPath, 'identity');
   const kubeConfigPath = path.join(destinationPath, 'kubeconfig.yaml');
+  core.setOutput('destination-dir', destinationPath);
   core.setOutput('identity-file', identityPath);
   core.setOutput('kubeconfig', kubeConfigPath);
 

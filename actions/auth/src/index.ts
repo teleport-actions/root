@@ -36,6 +36,7 @@ async function run() {
 
   const identityFilePath = path.join(destinationPath, 'identity');
   const sshConfigFilePath = path.join(destinationPath, 'ssh_config');
+  core.setOutput('destination-dir', destinationPath);
   core.setOutput('identity-file', identityFilePath);
   core.setOutput('ssh-config', sshConfigFilePath);
 
