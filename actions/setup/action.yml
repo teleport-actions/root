@@ -3,7 +3,10 @@ description: 'Installs `teleport`, `tsh`, `tbot` and `tctl`.'
 inputs:
   version:
     required: true
-    description: 'Specify the Teleport version without the preceding "v"'
+    description: 'Specify the Teleport version without the preceding "v" or specify "auto" to use the version indicated by your Teleport cluster.'
+  proxy:
+    description: 'Specify the address of your Teleport Proxy, required if version is set to "auto".'
+    required: false
   enterprise:
     required: false
     default: 'false'

@@ -36,6 +36,25 @@ jobs:
       - name: Install Teleport
         uses: teleport-actions/setup@v1
         with:
+          # specify version as "auto" and provide the address of your Teleport
+          # proxy using the "proxy" input.
+          version: auto
+          proxy: example.teleport.sh:443
+      - run: tsh # tsh, tbot and tctl will now be available
+```
+
+You can also specify a particular version of the Teleport binaries to install:
+
+```yaml
+on:
+  workflow_dispatch: {}
+jobs:
+  demo-setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Teleport
+        uses: teleport-actions/setup@v1
+        with:
           # version must be specified, and exclude the "v" prefix.
           # check https://goteleport.com/download/ for valid releases.
           version: 12.1.0

@@ -45,6 +45,7 @@ function versionString(
 interface Inputs {
   version: string;
   enterprise: boolean;
+  proxyAddr: string;
 }
 
 function getInputs(): Inputs {
@@ -52,28 +53,59 @@ function getInputs(): Inputs {
   if (version === '') {
     throw new Error("'version' input must be non-empty");
   }
-  if (version.startsWith('v')) {
-    throw new Error("'version' input should not be prefixed with 'v'");
-  }
-  const versionRegex =
-    /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/i;
-
-  if (!versionRegex.test(version)) {
-    throw new Error(
-      "incorrect 'version' specified, it should include all parts of the version e.g 11.0.1"
-    );
-  }
 
   const enterprise = core.getBooleanInput('enterprise');
+  const proxyAddr = core.getInput('proxy');
+
+  if (version !== 'auto') {
+    if (version.startsWith('v')) {
+      throw new Error("'version' input should not be prefixed with 'v'");
+    }
+    const versionRegex =
+        /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/i;
+
+    if (!versionRegex.test(version)) {
+      throw new Error(
+          "incorrect 'version' specified, it should include all parts of the version e.g 11.0.1 or be set to 'auto'"
+      );
+    }
+  } else {
+    if (proxyAddr === '') {
+        throw new Error(
+            "'proxy' input must be non-empty when 'version' is set to 'auto'"
+        );
+    }
+  }
 
   return {
     version,
     enterprise,
+    proxyAddr,
   };
+}
+
+async function fetchVersionFromProxy(proxyAddr: string): Promise<string> {
+  const resp = await fetch(`https://${proxyAddr}/webapi/find`);
+  const data = await resp.json();
+  const version = data?.auto_update?.tools_version;
+  if (!version) {
+    throw new Error(
+      `malformed response from proxy missing version: ${JSON.stringify(data)}`
+    );
+  }
+  return version;
 }
 
 async function run(): Promise<void> {
   const inputs = getInputs();
+
+  if (inputs.version === 'auto') {
+    core.info(`Fetching version from proxy: ${inputs.proxyAddr}`)
+    const proxyVersion = await fetchVersionFromProxy(inputs.proxyAddr);
+    core.info(`Fetched version: ${proxyVersion}`);
+    inputs.version = proxyVersion;
+  }
+
   const version = versionString(os.platform(), os.arch(), inputs.version);
   const toolName = inputs.enterprise ? 'teleport-ent' : 'teleport';
   core.info(`Installing ${toolName} ${version}`);
