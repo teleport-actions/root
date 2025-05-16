@@ -62,18 +62,18 @@ function getInputs(): Inputs {
       throw new Error("'version' input should not be prefixed with 'v'");
     }
     const versionRegex =
-        /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/i;
+      /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/i;
 
     if (!versionRegex.test(version)) {
       throw new Error(
-          "incorrect 'version' specified, it should include all parts of the version e.g 11.0.1 or be set to 'auto'"
+        "incorrect 'version' specified, it should include all parts of the version e.g 11.0.1 or be set to 'auto'"
       );
     }
   } else {
     if (proxyAddr === '') {
-        throw new Error(
-            "'proxy' input must be non-empty when 'version' is set to 'auto'"
-        );
+      throw new Error(
+        "'proxy' input must be non-empty when 'version' is set to 'auto'"
+      );
     }
   }
 
@@ -100,7 +100,7 @@ async function run(): Promise<void> {
   const inputs = getInputs();
 
   if (inputs.version === 'auto') {
-    core.info(`Fetching version from proxy: ${inputs.proxyAddr}`)
+    core.info(`Fetching version from proxy: ${inputs.proxyAddr}`);
     const proxyVersion = await fetchVersionFromProxy(inputs.proxyAddr);
     core.info(`Fetched version: ${proxyVersion}`);
     inputs.version = proxyVersion;
