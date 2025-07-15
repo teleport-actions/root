@@ -1,6 +1,6 @@
 {
   "name": "setup",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "license": "Apache-2.0",
   "repository": "https://github.com/teleport-actions/setup.git",
   "scripts": {
