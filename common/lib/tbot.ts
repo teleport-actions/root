@@ -58,6 +58,7 @@ export interface IdentityOutput {
   type: 'identity';
   destination: Destination;
   roles: Array<string>;
+  allow_reissue?: boolean;
 }
 
 export interface KubernetesOutput {
