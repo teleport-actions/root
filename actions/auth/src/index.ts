@@ -8,10 +8,21 @@ import { DirectoryDestination, IdentityOutput } from '@root/lib/tbot';
 
 const { version } = require('../package.json');
 
+interface Inputs {
+  allowReissue: boolean;
+}
+
+function getInputs(): Inputs {
+  return {
+    allowReissue: core.getBooleanInput('allow-reissue'),
+  };
+}
+
 async function run() {
-  await tbot.ensureMinimumVersion('14.0.0');
+  await tbot.ensureMinimumVersion('16.0.0');
 
   const sharedInputs = tbot.getSharedInputs();
+  const inputs = getInputs();
   const config = tbot.baseConfigurationFromSharedInputs(sharedInputs);
 
   const destinationPath = await io.makeTempDirectory();
@@ -24,6 +35,14 @@ async function run() {
     },
     roles: [], // Use all assigned to bot,
   };
+  // We only set `allow_reissue` to an explicit value if the input is set to
+  // true. This is because only tbot 17.2.9 and later supports this field, and,
+  // explicitly setting the field to false would cause older tbot versions to
+  // fail to parse. At a later date, we could remove this check and explicitly
+  // set the value to true. Consider this from the v19 release onwards.
+  if (inputs.allowReissue) {
+    output.allow_reissue = true;
+  }
   config.outputs.push(output);
 
   const configPath = await tbot.writeConfiguration(config);
