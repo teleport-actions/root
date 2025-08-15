@@ -9,13 +9,13 @@ import { DirectoryDestination, IdentityOutput } from '@root/lib/tbot';
 const { version } = require('../package.json');
 
 interface Inputs {
-    allowReissue: boolean;
+  allowReissue: boolean;
 }
 
 function getInputs(): Inputs {
-    return {
-        allowReissue: core.getBooleanInput('allow-reissue'),
-    };
+  return {
+    allowReissue: core.getBooleanInput('allow-reissue'),
+  };
 }
 
 async function run() {
@@ -41,7 +41,7 @@ async function run() {
   // fail to parse. At a later date, we could remove this check and explicitly
   // set the value to true. Consider this from the v19 release onwards.
   if (inputs.allowReissue) {
-      output.allow_reissue = true;
+    output.allow_reissue = true;
   }
   config.outputs.push(output);
 
