@@ -15,6 +15,9 @@ inputs:
   ca-pins:
     description: 'Specifies one or more trusted CAs to initially validate the identity of the Auth Server when connecting directly to it. This is not required for Teleport Cloud or when connecting via a Teleport Proxy'
     required: false
+  disable-env-vars:
+    description: 'Disables the automatic setting of environment variables like`TELEPORT_IDENTITY_FILE` by the action. This can be useful in more complex workflows where multiple identities are being used.'
+    required: false
 branding:
   icon: terminal
   color: 'purple'
