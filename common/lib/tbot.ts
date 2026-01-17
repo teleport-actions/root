@@ -1,5 +1,8 @@
 import * as fs from 'fs/promises';
+import * as os from 'os';
 import * as path from 'path';
+import * as child_process from 'child_process';
+import * as timers from 'timers/promises';
 
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
@@ -7,6 +10,18 @@ import * as yaml from 'yaml';
 import * as semver from 'semver';
 
 import * as io from './io';
+
+/**
+ * The default port for the diagnostic service, used for background actions.
+ */
+export const defaultDiagPort = 57263;
+
+/**
+ * The default timeout for background actions if readiness checks are enabled.
+ */
+export const defaultTimeoutMs = 30000;
+
+const stateLogPath = "log-path";
 
 export interface SharedInputs {
   proxy: string;
@@ -75,11 +90,44 @@ export interface ApplicationOutput {
   app_name: string;
 }
 
+export interface ApplicationProxy {
+  type: 'application-proxy';
+
+  listen: string;
+
+  // App proxies don't support roles, and don't require an app name.
+}
+
+export interface ApplicationTunnel {
+  type: 'application-tunnel';
+
+  listen: string;
+  roles: Array<string>;
+
+  app_name: string;
+}
+
+export interface DatabaseTunnel {
+  type: 'database-tunnel';
+
+  listen: string;
+  roles: Array<string>;
+
+  service: string;
+  database: string;
+  username: string;
+}
+
 export type Output = IdentityOutput | KubernetesOutput | ApplicationOutput;
+
+// Technically the two fields are interchangeable, but we'll put the new service
+// types under the new field.
+export type Service = ApplicationProxy | ApplicationTunnel | DatabaseTunnel;
 
 export interface Configuration {
   version: 'v2';
-  auth_server: string;
+  proxy_server?: string;
+  auth_server?: string;
   oneshot: boolean;
   certificate_ttl?: string;
   onboarding: {
@@ -89,18 +137,20 @@ export interface Configuration {
   };
   storage: Destination;
   outputs: Array<Output>;
+  services: Array<Service>;
 }
 
 export function baseConfigurationFromSharedInputs(
-  inputs: SharedInputs
+  inputs: SharedInputs,
+  oneshot = true,
 ): Configuration {
   const storage: MemoryDestination = {
     type: 'memory',
   };
   const cfg: Configuration = {
     version: 'v2',
-    auth_server: inputs.proxy,
-    oneshot: true,
+    proxy_server: inputs.proxy,
+    oneshot,
     onboarding: {
       join_method: 'github',
       token: inputs.token,
@@ -108,6 +158,7 @@ export function baseConfigurationFromSharedInputs(
     },
     storage: storage,
     outputs: [],
+    services: [],
   };
 
   if (inputs.certificateTTL) {
@@ -174,6 +225,184 @@ export async function execute(
   await exec.exec('tbot', args, {
     env,
   });
+}
+
+export interface ExecuteBackgroundParams {
+  configPath: string,
+  env: { [key: string]: string },
+
+  /**
+   * If unspecified, start the diag service on the given port. If unset, a
+   * default port will be used.
+   */
+  diagPort?: number;
+
+  /**
+   * If set, polls the diagnostics endpoint to wait for readiness before
+   * detaching. If the specified time elapses before tbot reports ready, the
+   * action fails. If unset, the action detaches the child immediately,
+   * potentially before it is ready.
+   */
+  timeoutMs?: number;
+}
+
+export async function executeBackground({
+  configPath,
+  env,
+  timeoutMs,
+  diagPort = defaultDiagPort,
+}: ExecuteBackgroundParams) {
+  const args = ['start', '-c', configPath];
+  if (core.isDebug()) {
+    args.push('--debug');
+  }
+
+  const diagAddr = `127.0.0.1:${diagPort}`;
+  core.setOutput("diag-addr", diagAddr);
+  args.push("--diag-addr", diagAddr);
+
+  core.info(`Invoking tbot with configuration ${configPath} and args: ${args}`);
+
+  // Open a log file to store bot log output. Save it both as output (for end
+  // users, if they want it for whatever reason), and for the post step.
+  const uuid = crypto.randomUUID();
+  const logPath = path.join(os.tmpdir(), `tbot-${uuid}.log`);
+  core.setOutput(stateLogPath, logPath);
+  core.saveState(stateLogPath, logPath);
+
+  const logHandle = await fs.open(logPath, 'a')
+
+  const child = child_process.spawn("tbot", args, {
+    detached: true,
+    stdio: ['ignore', logHandle.fd, logHandle.fd],
+    env,
+  });
+
+  if (timeoutMs) {
+    try {
+      const start = performance.now();
+      await waitForBackgroundReadiness(timeoutMs, diagAddr, child);
+
+      const end = performance.now();
+      core.info(`tbot became ready in ${end - start}ms`);
+    } catch (err: any) {
+      // On error, log it and dump the logs now. We won't be passing the log
+      // path back up so the caller won't be able to do this itself.
+      core.error(`tbot failed to become ready (${err}), examine the following log for details`);
+
+      // This dumps logs redundantly, but it's arguably more obvious to users
+      // given the explicit failure condition than making them have to look at
+      // the post step output.
+      await dumpLogs(logPath);
+
+      // Re-throw the error.
+      throw err;
+    }
+  } else {
+    core.warning('a wait timeout of 0 was specified (via the `timeoutMs` field), the bot may not be ready to service requests')
+  }
+
+  child.unref();
+}
+
+/**
+ * Reads tbot logs from the given path and writes them to stdout. If no path is
+ * provided, the path will be retrieved from the action state.
+ * @param path the log path to dump
+ */
+export async function dumpLogs(path?: string) {
+  if (!path) {
+    path = core.getState(stateLogPath);
+  }
+
+  if (!path) {
+    throw new Error('a log path must either be provided or stored in the action state');
+  }
+
+  // Re-capture variable to please tsc.
+  const logPath = path;
+
+  await core.group('tbot output', async () => {
+    try {
+      const content = await fs.readFile(logPath, 'utf-8')
+      process.stdout.write(content);
+    } catch (err) {
+      core.error(`Could not retrieve tbot logs: ${err}`);
+    }
+  });
+}
+
+export async function waitForBackgroundReadiness(
+  timeoutMs: number,
+  diagAddr: string,
+  child: child_process.ChildProcess,
+) {
+  let exitListener: ((code: number | null, signal: NodeJS.Signals | null) => void) | undefined;
+
+  // We'll spawn a few promises to race. First, raise an error after the given
+  // timeout.
+  const controller = new AbortController();
+  const timeout = (async () => {
+    await timers.setTimeout(timeoutMs, undefined, { signal: controller.signal });
+    throw new Error(`timed out after ${timeoutMs}ms`);
+  })().catch((err) => {
+    // Ignore abort errors if cancelled.
+    if (err.name === 'AbortError') {
+      return;
+    }
+
+    throw err;
+  });
+
+  // Next, wait for the child to exit and raise an error if it exits while we're
+  // still waiting.
+  const childExit: Promise<void> = new Promise((_, reject) => {
+    exitListener = (code, signal) => {
+      reject(new Error(`tbot exited prematurely (code=${code}, signal=${signal})`));
+    };
+
+    child.once('exit', exitListener);
+  });
+
+  // Finally, poll the /wait endpoint. (Ideally, this succeeds before the others
+  // fail.)
+  const waiter = (async () => {
+    while (!controller.signal.aborted) {
+      try {
+        const result = await fetch(`http://${diagAddr}/wait`);
+        if (result.ok) {
+          return;
+        }
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          return;
+        }
+
+        // Ignore all other errors. Requests are expectedto  fail if the bot
+        // hasn't started yet (I/O error), or if reports unhealthy (503).
+      }
+
+      try {
+        await timers.setTimeout(250, undefined, { signal: controller.signal });
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+  })();
+
+   try {
+    await Promise.race([timeout, childExit, waiter]);
+  } finally {
+    // Abort any remaining promises.
+    controller.abort();
+
+    // Also remove the event listener.
+    if (exitListener !== undefined) {
+      child.off('exit', exitListener)
+    }
+  }
 }
 
 // versionRegex extracts a version from a string like

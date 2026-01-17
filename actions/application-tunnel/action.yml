@@ -1,0 +1,31 @@
+name: 'Teleport Application Tunnel'
+description: 'Opens a local tunnel in the background of your workflow to a TCP or HTTP application protected by Teleport.'
+inputs:
+  app:
+    description: 'Specify the name of the application in Teleport you wish to tunnel.'
+    required: true
+  listen:
+    description: 'Specify a listener URI for the local tunnel, e.g. tcp://localhost:1234'
+    required: true
+  timeoutMs:
+    description: 'The maximum amount of time to wait in milliseconds for the tunnel to become ready. Set to 0 to skip waiting.'
+    required: false
+    default: '30000'
+  diagPort:
+    description: 'Specify an alternative port for the diagnostics service.'
+    required: false
+    default: '57263'
+
+runs:
+  using: 'node20'
+  main: 'dist/main/index.js'
+  post: 'dist/post/index.js'
+
+# Extend functionality provided by gamma; fields whitelisted to avoid
+# overwriting `runs`.
+extend:
+  - from: '@/common/action.yml'
+    include:
+      - field: inputs
+      - field: branding
+      - field: author

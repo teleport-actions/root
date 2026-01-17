@@ -1,0 +1,17 @@
+{
+    "name": "application-proxy",
+    "version": "1.0.0",
+    "license": "Apache-2.0",
+    "repository": "https://github.com/teleport-actions/application-proxy.git",
+    "scripts": {
+        "build": "ncc build ./src/index.ts -o dist/main && ncc build ./src/post.ts -o dist/post"
+    },
+    "dependencies": {
+        "@actions/core": "^2.0.2",
+        "@actions/tool-cache": "^2.0.1"
+    },
+    "private": true,
+    "devDependencies": {
+        "@types/node": "^20.0.0"
+    }
+}
