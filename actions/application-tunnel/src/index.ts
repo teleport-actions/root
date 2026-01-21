@@ -18,11 +18,19 @@ function getInputs(): Inputs {
     app: core.getInput('app', {
       required: true,
     }),
-    listen: util.parseListenURL(core.getInput('listen', {
-      required: true,
-    })),
-    timeoutMs: util.parseOptionalInt(core.getInput('timeoutMs'), tbot.defaultTimeoutMs),
-    diagPort: util.parseOptionalInt(core.getInput('diagPort'), tbot.defaultDiagPort)
+    listen: util.parseListenURL(
+      core.getInput('listen', {
+        required: true,
+      })
+    ),
+    timeoutMs: util.parseOptionalInt(
+      core.getInput('timeoutMs'),
+      tbot.defaultTimeoutMs
+    ),
+    diagPort: util.parseOptionalInt(
+      core.getInput('diagPort'),
+      tbot.defaultDiagPort
+    ),
   };
 }
 
@@ -50,7 +58,8 @@ async function run() {
   await tbot.executeBackground({
     timeoutMs: inputs.timeoutMs,
     diagPort: inputs.diagPort,
-    configPath, env
+    configPath,
+    env,
   });
 
   core.setOutput('application-tunnel-uri', inputs.listen.toString());

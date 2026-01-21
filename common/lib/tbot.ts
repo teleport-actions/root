@@ -21,7 +21,7 @@ export const defaultDiagPort = 57263;
  */
 export const defaultTimeoutMs = 30000;
 
-const stateLogPath = "log-path";
+const stateLogPath = 'log-path';
 
 export interface SharedInputs {
   proxy: string;
@@ -142,7 +142,7 @@ export interface Configuration {
 
 export function baseConfigurationFromSharedInputs(
   inputs: SharedInputs,
-  oneshot = true,
+  oneshot = true
 ): Configuration {
   const storage: MemoryDestination = {
     type: 'memory',
@@ -228,8 +228,8 @@ export async function execute(
 }
 
 export interface ExecuteBackgroundParams {
-  configPath: string,
-  env: { [key: string]: string },
+  configPath: string;
+  env: { [key: string]: string };
 
   /**
    * If unspecified, start the diag service on the given port. If unset, a
@@ -258,8 +258,8 @@ export async function executeBackground({
   }
 
   const diagAddr = `127.0.0.1:${diagPort}`;
-  core.setOutput("diag-addr", diagAddr);
-  args.push("--diag-addr", diagAddr);
+  core.setOutput('diag-addr', diagAddr);
+  args.push('--diag-addr', diagAddr);
 
   core.info(`Invoking tbot with configuration ${configPath} and args: ${args}`);
 
@@ -270,9 +270,9 @@ export async function executeBackground({
   core.setOutput(stateLogPath, logPath);
   core.saveState(stateLogPath, logPath);
 
-  const logHandle = await fs.open(logPath, 'a')
+  const logHandle = await fs.open(logPath, 'a');
 
-  const child = child_process.spawn("tbot", args, {
+  const child = child_process.spawn('tbot', args, {
     detached: true,
     stdio: ['ignore', logHandle.fd, logHandle.fd],
     env,
@@ -288,7 +288,9 @@ export async function executeBackground({
     } catch (err: any) {
       // On error, log it and dump the logs now. We won't be passing the log
       // path back up so the caller won't be able to do this itself.
-      core.error(`tbot failed to become ready (${err}), examine the following log for details`);
+      core.error(
+        `tbot failed to become ready (${err}), examine the following log for details`
+      );
 
       // This dumps logs redundantly, but it's arguably more obvious to users
       // given the explicit failure condition than making them have to look at
@@ -299,7 +301,9 @@ export async function executeBackground({
       throw err;
     }
   } else {
-    core.warning('a wait timeout of 0 was specified (via the `timeoutMs` field), the bot may not be ready to service requests')
+    core.warning(
+      'a wait timeout of 0 was specified (via the `timeoutMs` field), the bot may not be ready to service requests'
+    );
   }
 
   child.unref();
@@ -316,7 +320,9 @@ export async function dumpLogs(path?: string) {
   }
 
   if (!path) {
-    throw new Error('a log path must either be provided or stored in the action state');
+    throw new Error(
+      'a log path must either be provided or stored in the action state'
+    );
   }
 
   // Re-capture variable to please tsc.
@@ -324,7 +330,7 @@ export async function dumpLogs(path?: string) {
 
   await core.group('tbot output', async () => {
     try {
-      const content = await fs.readFile(logPath, 'utf-8')
+      const content = await fs.readFile(logPath, 'utf-8');
       process.stdout.write(content);
     } catch (err) {
       core.error(`Could not retrieve tbot logs: ${err}`);
@@ -335,17 +341,21 @@ export async function dumpLogs(path?: string) {
 export async function waitForBackgroundReadiness(
   timeoutMs: number,
   diagAddr: string,
-  child: child_process.ChildProcess,
+  child: child_process.ChildProcess
 ) {
-  let exitListener: ((code: number | null, signal: NodeJS.Signals | null) => void) | undefined;
+  let exitListener:
+    | ((code: number | null, signal: NodeJS.Signals | null) => void)
+    | undefined;
 
   // We'll spawn a few promises to race. First, raise an error after the given
   // timeout.
   const controller = new AbortController();
   const timeout = (async () => {
-    await timers.setTimeout(timeoutMs, undefined, { signal: controller.signal });
+    await timers.setTimeout(timeoutMs, undefined, {
+      signal: controller.signal,
+    });
     throw new Error(`timed out after ${timeoutMs}ms`);
-  })().catch((err) => {
+  })().catch(err => {
     // Ignore abort errors if cancelled.
     if (err.name === 'AbortError') {
       return;
@@ -358,7 +368,9 @@ export async function waitForBackgroundReadiness(
   // still waiting.
   const childExit: Promise<void> = new Promise((_, reject) => {
     exitListener = (code, signal) => {
-      reject(new Error(`tbot exited prematurely (code=${code}, signal=${signal})`));
+      reject(
+        new Error(`tbot exited prematurely (code=${code}, signal=${signal})`)
+      );
     };
 
     child.once('exit', exitListener);
@@ -392,7 +404,7 @@ export async function waitForBackgroundReadiness(
     }
   })();
 
-   try {
+  try {
     await Promise.race([timeout, childExit, waiter]);
   } finally {
     // Abort any remaining promises.
@@ -400,7 +412,7 @@ export async function waitForBackgroundReadiness(
 
     // Also remove the event listener.
     if (exitListener !== undefined) {
-      child.off('exit', exitListener)
+      child.off('exit', exitListener);
     }
   }
 }
