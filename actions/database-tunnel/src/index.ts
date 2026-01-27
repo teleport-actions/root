@@ -39,7 +39,7 @@ function getInputs(): Inputs {
 }
 
 async function run() {
-  await tbot.ensureMinimumVersion('18.6.2'); // TODO: Replace with version containing `tbot wait` once released.
+  await tbot.ensureMinimumVersion('18.6.4');
 
   const inputs = getInputs();
   const sharedInputs = tbot.getSharedInputs();
