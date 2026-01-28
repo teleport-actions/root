@@ -21,7 +21,7 @@ your job.
 
 Pre-requisites:
 
-- **Teleport 18.6.2 or above must be used.** Use
+- **Teleport 18.6.4 or above must be used.** Use
   [`teleport-actions/auth-application`](https://github.com/teleport-actions/auth-application/)
   for compatibility with older versions of Teleport.
 - Teleport binaries must already be installed in the job environment.

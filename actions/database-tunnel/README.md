@@ -20,7 +20,7 @@ requests to the target database for the duration of your job.
 
 Pre-requisites:
 
-- **Teleport 18.6.2 or above must be used.** For older versions, refer to the
+- **Teleport 18.6.4 or above must be used.** For older versions, refer to the
   manual configuration steps [in our documentation][manual].
 - Teleport binaries must already be installed in the job environment.
 - The Database you wish to access must already be connected to your Teleport
