@@ -333,6 +333,24 @@ export async function dumpLogs(path?: string) {
   });
 }
 
+function isAbortError(err: unknown): err is { name: 'AbortError' } {
+  return (
+    !!err &&
+    typeof err === 'object' &&
+    'name' in err &&
+    err.name === 'AbortError'
+  );
+}
+
+/**
+ * Waits up to `timeoutMs` for the child process to become ready. If the child
+ * reports ready, it returns immediately. If the child exits or the timeout is
+ * exceeded, an error is raised. This is only appropriate for long-running bots
+ * and should not be used with `oneshot` mode.
+ * @param timeoutMs the maximum time to wait in ms; an error is raised if exceeded
+ * @param diagAddr the tbot diag address to check readiness
+ * @param child the child process handle
+ */
 export async function waitForBackgroundReadiness(
   timeoutMs: number,
   diagAddr: string,
@@ -346,23 +364,28 @@ export async function waitForBackgroundReadiness(
   // timeout.
   const controller = new AbortController();
   const timeout = (async () => {
-    await timers.setTimeout(timeoutMs, undefined, {
-      signal: controller.signal,
-    });
-    throw new Error(`timed out after ${timeoutMs}ms`);
-  })().catch(err => {
-    // Ignore abort errors if cancelled.
-    if (err.name === 'AbortError') {
-      return;
+    try {
+      await timers.setTimeout(timeoutMs, undefined, {
+        signal: controller.signal,
+      });
+    } catch (err) {
+      // Ignore abort errors if cancelled.
+      if (isAbortError(err)) {
+        return;
+      }
+      throw err;
     }
 
-    throw err;
-  });
+    throw new Error(`timed out after ${timeoutMs}ms`);
+  })();
 
   // Next, wait for the child to exit and raise an error if it exits while we're
   // still waiting.
   const childExit: Promise<void> = new Promise((_, reject) => {
     exitListener = (code, signal) => {
+      // Note: we don't currently check the code, so this treats 0 as a failure.
+      // In the context of non-oneshot bots, this would be an unexpected case.
+      // If we ever wanted to use this with oneshots we'd want to improve this.
       reject(
         new Error(`tbot exited prematurely (code=${code}, signal=${signal})`)
       );
@@ -381,7 +404,7 @@ export async function waitForBackgroundReadiness(
           return;
         }
       } catch (err: any) {
-        if (err.name === 'AbortError') {
+        if (isAbortError(err)) {
           return;
         }
 
@@ -392,7 +415,7 @@ export async function waitForBackgroundReadiness(
       try {
         await timers.setTimeout(250, undefined, { signal: controller.signal });
       } catch (err: any) {
-        if (err.name === 'AbortError') {
+        if (isAbortError(err)) {
           return;
         }
       }
