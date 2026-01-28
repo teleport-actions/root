@@ -288,9 +288,14 @@ export async function executeBackground({
     } catch (err: any) {
       // On error, log it and dump the logs now. We won't be passing the log
       // path back up so the caller won't be able to do this itself.
-      core.error(
+      core.setFailed(
         `tbot failed to become ready (${err}), examine the following log for details`
       );
+
+      // Attempt to cleanup: kill the child process and close the log handle.
+      // The runtime will complain on exit otherwise.
+      child.kill();
+      await logHandle.close();
 
       // This dumps logs redundantly, but it's arguably more obvious to users
       // given the explicit failure condition than making them have to look at
