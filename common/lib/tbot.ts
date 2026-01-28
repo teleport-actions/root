@@ -232,7 +232,7 @@ export interface ExecuteBackgroundParams {
   env: { [key: string]: string };
 
   /**
-   * If unspecified, start the diag service on the given port. If unset, a
+   * If set, starts the diag service on the given port. If unset, a
    * default port will be used.
    */
   diagPort?: number;
@@ -315,18 +315,13 @@ export async function executeBackground({
  * @param path the log path to dump
  */
 export async function dumpLogs(path?: string) {
-  if (!path) {
-    path = core.getState(stateLogPath);
-  }
+  const logPath = path || core.getState(stateLogPath);
 
-  if (!path) {
+  if (!logPath) {
     throw new Error(
       'a log path must either be provided or stored in the action state'
     );
   }
-
-  // Re-capture variable to please tsc.
-  const logPath = path;
 
   await core.group('tbot output', async () => {
     try {
@@ -390,7 +385,7 @@ export async function waitForBackgroundReadiness(
           return;
         }
 
-        // Ignore all other errors. Requests are expectedto  fail if the bot
+        // Ignore all other errors. Requests are expected to fail if the bot
         // hasn't started yet (I/O error), or if reports unhealthy (503).
       }
 
