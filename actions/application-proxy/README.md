@@ -21,8 +21,10 @@ applications for the duration of your job.
 
 Machine & Workload ID's `application-proxy` service can be used to access any
 HTTP application (or many applications) granted to the bot via Teleport RBAC
-rules. Note that it cannot currently be used to access TCP applications. To read
-more about application proxies, refer to [our documentation](https://goteleport.com/docs/reference/machine-workload-identity/configuration/#application-proxy).
+rules. Note that it cannot currently be used to access TCP applications; if you
+need to access a TCP app, use the [`application-tunnel`](https://github.com/teleport-actions/application-tunnel)
+action instead. To read more about application proxies, refer to
+[our documentation](https://goteleport.com/docs/reference/machine-workload-identity/configuration/#application-proxy).
 
 Pre-requisites:
 
