@@ -41,6 +41,9 @@ Find out more about our actions in their individual repos:
 - [`teleport-actions/auth`](https://github.com/teleport-actions/auth)
 - [`teleport-actions/auth-k8s`](https://github.com/teleport-actions/auth-k8s)
 - [`teleport-actions/auth-application`](https://github.com/teleport-actions/auth-application)
+- [`teleport-actions/application-proxy`](https://github.com/teleport-actions/application-proxy)
+- [`teleport-actions/application-tunnel`](https://github.com/teleport-actions/application-tunnel)
+- [`teleport-actions/database-tunnel`](https://github.com/teleport-actions/database-tunnel)
 
 ## Developing
 
