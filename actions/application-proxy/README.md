@@ -14,10 +14,10 @@
 
 # `teleport-actions/application-proxy@v1`
 
-`application-proxy` uses Teleport Machine ID to spawn a local HTTP proxy server
-that tunnels connections to HTTP applications protected by Teleport. It launches
-in the background and serves requests to the target application for the duration
-of your job.
+`application-proxy` uses Teleport Machine ID & Workload Identity to spawn a
+local HTTP proxy server that tunnels connections to HTTP applications protected
+by Teleport. It launches in the background and serves requests to requested
+applications for the duration of your job.
 
 Machine & Workload ID's `application-proxy` service can be used to access any
 HTTP application (or many applications) granted to the bot via Teleport RBAC
