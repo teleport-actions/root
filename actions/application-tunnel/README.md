@@ -66,11 +66,11 @@ jobs:
           # note that the tunnel might not be immediately ready for use, and
           # most error detection will be skipped. Optional, defaults to the
           # value below.
-          timeoutMs: '30000'
+          timeout-ms: '30000'
           # Specify an alternative diagnostics port. If running multiple
           # background Teleport actions, you'll need to configure a unique port
           # for each. Optional; defaults to the value below.
-          diagPort: '57263'
+          diag-port: '57263'
           # Specify the length of time that the generated credentials should be
           # valid for. Note that background process will automatically refresh
           # its credentials before they expire, so most users should not need to

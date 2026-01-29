@@ -24,11 +24,11 @@ function getInputs(): Inputs {
       })
     ),
     timeoutMs: util.parseOptionalInt(
-      core.getInput('timeoutMs'),
+      core.getInput('timeout-ms'),
       tbot.defaultTimeoutMs
     ),
     diagPort: util.parseOptionalInt(
-      core.getInput('diagPort'),
+      core.getInput('diag-port'),
       tbot.defaultDiagPort
     ),
 
