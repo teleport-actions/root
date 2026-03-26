@@ -6,7 +6,7 @@
     "@actions/core": "^1.10.0",
     "@actions/tool-cache": "^2.0.1",
     "semver": "^7.5.4",
-    "yaml": "^2.2.2"
+    "yaml": "^2.8.3"
   },
   "private": true,
   "devDependencies": {
