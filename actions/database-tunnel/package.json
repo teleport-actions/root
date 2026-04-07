@@ -1,6 +1,6 @@
 {
   "name": "database-tunnel",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "Apache-2.0",
   "repository": "https://github.com/teleport-actions/database-tunnel.git",
   "scripts": {
@@ -12,6 +12,6 @@
   },
   "private": true,
   "devDependencies": {
-    "@types/node": "^20.0.0"
+    "@types/node": "^24.0.0"
   }
 }

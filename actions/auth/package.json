@@ -1,6 +1,6 @@
 {
   "name": "auth",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "license": "Apache-2.0",
   "repository": "https://github.com/teleport-actions/auth.git",
   "scripts": {
@@ -12,6 +12,6 @@
   },
   "private": true,
   "devDependencies": {
-    "@types/node": "^20.11.16"
+    "@types/node": "^24.0.0"
   }
 }
