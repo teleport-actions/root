@@ -22,7 +22,7 @@ inputs:
     description: 'Specify the name of the database user that should access the database.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/main/index.js'
   post: 'dist/post/index.js'
 
