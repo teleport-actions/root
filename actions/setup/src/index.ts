@@ -8,6 +8,9 @@ import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
 
+const downloadReferer = `https://download.setup.teleport-actions.cdn.teleport.dev`;
+const checksumReferer = `https://checksum.setup.teleport-actions.cdn.teleport.dev`;
+
 function getPlatform(rawPlatform: string): string {
   switch (rawPlatform) {
     case 'linux': {
@@ -109,7 +112,15 @@ async function verifyChecksum(
   archivePath: string,
   checksumUrl: string
 ): Promise<boolean> {
-  const checksumPath = await tc.downloadTool(checksumUrl);
+  const headers = {
+    Referer: checksumReferer,
+  };
+  const checksumPath = await tc.downloadTool(
+    checksumUrl,
+    undefined,
+    undefined,
+    headers,
+  );
   try {
     const expectedChecksum = (await fs.readFile(checksumPath, 'utf8'))
       .trim()
@@ -199,6 +210,9 @@ async function run(): Promise<void> {
   const checksumUrl = `${archiveUrl}.sha256`;
   const runnerTemp = process.env['RUNNER_TEMP'] || os.tmpdir();
   const cacheKey = `teleport-setup-${toolName}-${version}`;
+  const headers = {
+    Referer: downloadReferer,
+  };
 
   // The original compressed archive is cached outside GITHUB_WORKSPACE so it
   // never appears in the checked-out repository.
@@ -251,7 +265,7 @@ async function run(): Promise<void> {
 
   core.info('Could not find Teleport binaries in cache. Fetching...');
   core.debug('Downloading tar');
-  const downloadPath = await tc.downloadTool(archiveUrl);
+  const downloadPath = await tc.downloadTool(archiveUrl, undefined, undefined, headers);
 
   if (!(await verifyChecksum(downloadPath, checksumUrl))) {
     await fs.rm(downloadPath, { force: true });
