@@ -11,6 +11,13 @@ inputs:
     required: false
     default: 'false'
     description: 'Specify whether to use the enterprise binaries.'
+  cache:
+    required: false
+    default: 'true'
+    description: 'Specify whether to leverage GitHub Actions cache for verified Teleport archives.'
+outputs:
+  cache-hit:
+    description: 'A boolean value indicating whether the Teleport binaries were restored from the GitHub Actions cache.'
 extend:
   - from: '@/common/action.yml'
     include:

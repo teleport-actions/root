@@ -20,6 +20,23 @@ example `tctl`, `tsh` and `tbot`. You can then use these within your workflows.
 The GitHub Actions tool cache is used by the `setup` action in order to increase
 setup speed and reduce bandwidth usage on self-hosted runners.
 
+## GitHub Actions cache
+
+The shared GitHub Actions cache is enabled by default in v2. Cached and
+downloaded Teleport archives are verified against the SHA-256 checksum
+published by `cdn.teleport.dev` before they are extracted.
+
+```yaml
+- name: Install Teleport with a verified shared cache
+  uses: teleport-actions/setup@v2
+  with:
+    version: 18.11.1
+```
+
+Set `cache: false` to avoid using shared cache storage. The `cache-hit` output
+is `true` only when the shared GitHub Actions cache is restored; a local runner
+tool-cache hit leaves it `false`.
+
 Pre-requisites:
 
 - A Linux based runner.
@@ -34,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Teleport
-        uses: teleport-actions/setup@v1
+        uses: teleport-actions/setup@v2
         with:
           # specify version as "auto" and provide the address of your Teleport
           # proxy using the "proxy" input.
@@ -53,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Teleport
-        uses: teleport-actions/setup@v1
+        uses: teleport-actions/setup@v2
         with:
           # version must be specified, and exclude the "v" prefix.
           # check https://goteleport.com/download/ for valid releases.
