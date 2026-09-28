@@ -1,5 +1,10 @@
 import os from 'os';
+import path from 'path';
+import fs from 'fs/promises';
+import { createReadStream } from 'fs';
+import { createHash } from 'crypto';
 
+import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
 
@@ -46,6 +51,7 @@ interface Inputs {
   version: string;
   enterprise: boolean;
   proxyAddr: string;
+  cacheEnabled: boolean;
 }
 
 function getInputs(): Inputs {
@@ -77,10 +83,13 @@ function getInputs(): Inputs {
     }
   }
 
+  const cacheEnabled = core.getBooleanInput('cache');
+
   return {
     version,
     enterprise,
     proxyAddr,
+    cacheEnabled,
   };
 }
 
@@ -96,8 +105,75 @@ async function fetchVersionFromProxy(proxyAddr: string): Promise<string> {
   return version;
 }
 
+async function verifyChecksum(
+  archivePath: string,
+  checksumUrl: string
+): Promise<boolean> {
+  const checksumPath = await tc.downloadTool(checksumUrl);
+  try {
+    const expectedChecksum = (await fs.readFile(checksumPath, 'utf8'))
+      .trim()
+      .split(/\s+/)[0];
+    if (!/^[a-f0-9]{64}$/i.test(expectedChecksum)) {
+      throw new Error(
+        `malformed Teleport archive checksum from ${checksumUrl}`
+      );
+    }
+
+    const hash = createHash('sha256');
+    for await (const chunk of createReadStream(archivePath)) {
+      hash.update(chunk);
+    }
+    return hash.digest('hex').toLowerCase() === expectedChecksum.toLowerCase();
+  } finally {
+    await fs.rm(checksumPath, { force: true });
+  }
+}
+
+async function saveCache(tarPath: string, cacheKey: string): Promise<void> {
+  try {
+    core.info(`Saving verified cache with key: ${cacheKey}`);
+    const cacheId = await cache.saveCache([tarPath], cacheKey);
+    if (cacheId === -1) {
+      core.debug(`Cache was not saved for the key: ${cacheKey}`);
+      return;
+    }
+    core.info(`Cache saved with the key: ${cacheKey}`);
+  } catch (error) {
+    core.warning(`Cache save failed: ${(error as Error).message}`);
+  }
+}
+
+function isGhes(): boolean {
+  const ghUrl = new URL(
+    process.env['GITHUB_SERVER_URL'] || 'https://github.com'
+  );
+  const hostname = ghUrl.hostname.trimEnd().toUpperCase();
+  const isGitHubHost = hostname === 'GITHUB.COM';
+  const isGheCloudHost = hostname.endsWith('.GHE.COM');
+  const isLocalHost = hostname.endsWith('.LOCALHOST');
+  return !isGitHubHost && !isGheCloudHost && !isLocalHost;
+}
+
+function isCacheFeatureAvailable(): boolean {
+  if (cache.isFeatureAvailable()) return true;
+
+  if (isGhes()) {
+    core.warning(
+      'Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.'
+    );
+    return false;
+  }
+
+  core.warning(
+    'The runner was not able to contact the cache service. Caching will be skipped'
+  );
+  return false;
+}
+
 async function run(): Promise<void> {
   const inputs = getInputs();
+  core.setOutput('cache-hit', false);
 
   if (inputs.version === 'auto') {
     core.info(`Fetching version from proxy: ${inputs.proxyAddr}`);
@@ -110,28 +186,103 @@ async function run(): Promise<void> {
   const toolName = inputs.enterprise ? 'teleport-ent' : 'teleport';
   core.info(`Installing ${toolName} ${version}`);
 
+  // Check tool cache first (local to the runner)
   const toolPath = tc.find(toolName, version);
   if (toolPath !== '') {
-    core.info('Teleport binaries found in cache.');
+    core.info('Teleport binaries found in tool cache.');
     core.addPath(toolPath);
     return;
   }
 
-  core.info('Could not find Teleport binaries in cache. Fetching...');
-  core.debug('Downloading tar');
-  const downloadPath = await tc.downloadTool(
-    `https://cdn.teleport.dev/${toolName}-${version}-bin.tar.gz`
+  const cachingActive = inputs.cacheEnabled && isCacheFeatureAvailable();
+  const archiveUrl = `https://cdn.teleport.dev/${toolName}-${version}-bin.tar.gz`;
+  const checksumUrl = `${archiveUrl}.sha256`;
+  const runnerTemp = process.env['RUNNER_TEMP'] || os.tmpdir();
+  const cacheKey = `teleport-setup-${toolName}-${version}`;
+
+  // The original compressed archive is cached outside GITHUB_WORKSPACE so it
+  // never appears in the checked-out repository.
+  const tarPath = path.join(
+    runnerTemp,
+    '.teleport-setup-cache',
+    `${toolName}-${version}.tar.gz`
   );
 
+  // Try GitHub Cache (shared between runs)
+  let cacheEntryWasCorrupt = false;
+  if (cachingActive) {
+    try {
+      core.info('Attempting to restore from GitHub Actions cache...');
+      await fs.mkdir(path.dirname(tarPath), { recursive: true });
+      const matchedKey = await cache.restoreCache([tarPath], cacheKey);
+      if (matchedKey) {
+        if (await verifyChecksum(tarPath, checksumUrl)) {
+          core.info(`Verified cache restored from key: ${matchedKey}`);
+          const extractedPath = await tc.extractTar(tarPath, undefined, [
+            'xz',
+            '--strip',
+            '1',
+          ]);
+          const cachedPath = await tc.cacheDir(
+            extractedPath,
+            toolName,
+            version
+          );
+          core.setOutput('cache-hit', true);
+          core.addPath(cachedPath);
+          return;
+        }
+
+        cacheEntryWasCorrupt = true;
+        core.warning(
+          `Restored cache checksum did not match for key ${cacheKey}. Discarding it.`
+        );
+        await fs.rm(tarPath, { force: true });
+      }
+      core.info('GitHub Actions cache miss.');
+    } catch (error) {
+      core.warning(
+        `Cache restore failed, falling back to download: ${
+          (error as Error).message
+        }`
+      );
+    }
+  }
+
+  core.info('Could not find Teleport binaries in cache. Fetching...');
+  core.debug('Downloading tar');
+  const downloadPath = await tc.downloadTool(archiveUrl);
+
+  if (!(await verifyChecksum(downloadPath, checksumUrl))) {
+    await fs.rm(downloadPath, { force: true });
+    throw new Error('Downloaded Teleport archive checksum did not match.');
+  }
+  core.info('Downloaded Teleport archive checksum verified.');
+
+  let tarballPath = downloadPath;
+  if (cachingActive) {
+    await fs.mkdir(path.dirname(tarPath), { recursive: true });
+    await fs.rename(downloadPath, tarPath);
+    tarballPath = tarPath;
+  }
+
   core.debug('Extracting tar');
-  const extractedPath = await tc.extractTar(downloadPath, undefined, [
+  const extractedPath = await tc.extractTar(tarballPath, undefined, [
     'xz',
     '--strip',
     '1',
   ]);
-
-  core.info('Fetched binaries from Teleport. Writing them back to cache...');
   const cachedPath = await tc.cacheDir(extractedPath, toolName, version);
   core.addPath(cachedPath);
+
+  if (cachingActive && !cacheEntryWasCorrupt) {
+    // A failed cache upload must not make an otherwise successful setup fail.
+    process.on('uncaughtException', error => {
+      core.warning(`Cache save failed: ${error.message}`);
+    });
+    await saveCache(tarPath, cacheKey);
+  }
 }
-run().catch(core.setFailed);
+run()
+  .catch(core.setFailed)
+  .finally(() => process.exit());
